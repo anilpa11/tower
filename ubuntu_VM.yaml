@@ -27,7 +27,7 @@
       esxi_hostname: vmhost01.home
       datacenter: Arakis
       datastore: vmhost01_DS01
-      state: present
+      state: absent
       wait_for_ip_address: yes
       customization:
          hostname: "{{ vm_name }}"
