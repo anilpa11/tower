@@ -1,0 +1,34 @@
+---
+- name: create a blank VM
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+  - name: create new VM
+    vmware_guest:
+      #hostname: 192.168.0.14
+      #username: "{{ username }}"
+      #password: "{{ password }}"
+      validate_certs: false
+      name: "{{ vm_name }}"
+      guest_id: "ubuntu64Guest"
+      template: ubuntu-noble-24.04-cloud-ansible
+      disk:
+        - size_gb: 50
+      hardware:
+         memory_mb: 4096
+         num_cpus: 2
+         scsi: paravirtual
+      networks:
+        - name: "VM Network"
+          device_name: vmxnet3
+      folder: "Discovered virtual machine"
+      #cluster: EG-Cluster
+      esxi_hostname: vmhost01.home
+      datacenter: Arakis
+      datastore: vmhost01_DS01
+      state: present
+      wait_for_ip_address: yes
+      customization:
+         hostname: "{{ vm_name }}"
+      wait_for_customization: true

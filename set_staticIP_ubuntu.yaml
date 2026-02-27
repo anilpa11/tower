@@ -1,0 +1,44 @@
+- name: Configure static IP on the newly created VM
+  hosts: "{{ target_host }}"  # Replace with your target host or use a variable
+  become: yes
+  gather_facts: no
+  vars:
+    vars_prompt:
+    - name: "target_host"
+      prompt: "Please enter the hostname or IP address of the target host"
+      private: no  # Set to 'yes' if you don't want the input to be displayed
+    desired_ip: "{{ desired_ip }}/24"  # Set this variable according to your requirements
+
+  tasks:
+    
+    - name: Remove old netplan files if they exist
+      shell: |
+        [ -f /etc/netplan/50-cloud-init.yaml.BeforeVMwareCustomization ] && rm /etc/netplan/50-cloud-init.yaml.BeforeVMwareCustomization || true
+        [ -f /etc/netplan/99-netcfg-vmware.yaml ] && rm /etc/netplan/99-netcfg-vmware.yaml || true
+
+    - name: Configure static IP in netplan
+      copy:
+        dest: /etc/netplan/50-cloud-init.yaml
+        content: |
+          network:
+            version: 2
+            ethernets:
+              ens192:  # Replace with your network interface name
+                dhcp4: no
+                addresses:
+                  - "{{ desired_ip }}/24"  # Replace with your desired static IP and subnet
+                nameservers:
+                  addresses:
+                    - 192.168.0.15  # Replace with your DNS server(s)
+                    - 192.168.0.8
+                routes:
+                  - to: default
+                    via: 192.168.0.1
+    - name: reboot host 
+      shell: reboot
+    - name: Stop playbook execution
+      meta: end_play
+#    - name: Apply netplan configuration
+#      command: netplan apply
+
+

@@ -1,0 +1,32 @@
+---
+- name: create a blank VM
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: create new VM
+    vmware_guest:
+      hostname: 192.168.0.14
+      username: administrator@vsphere.local
+      password: Q66tp4xe!
+      validate_certs: false
+      name: blank_win_VM
+      guest_id: "windows9Server64Guest"
+      hardware:
+        memory_mb: 4096
+        num_cpus: 1
+        scsi: paravirtual
+      #template: ubuntu20
+      #networks:
+       # - name: "VM Network"
+        #  device_name: vmxnet3
+      folder: "Discovered virtual machine"
+      #cluster: EG-Cluster
+      esxi_hostname: vmhost03.home
+      datacenter: Arakis
+      datastore: vmost03_DS
+      state: present
+      wait_for_ip_address: no
+
