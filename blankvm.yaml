@@ -12,7 +12,11 @@
       username: administrator@vsphere.local
       password: Q66tp4xe!
       validate_certs: false
+<<<<<<< HEAD
       name: blank_win_VM
+=======
+      name: blank_win_VM2
+>>>>>>> 5d18c6ee2a656d5bdfbaa4a7d762c083e2da2fc4
       guest_id: "windows9Server64Guest"
       hardware:
         memory_mb: 4096
@@ -29,4 +33,7 @@
       datastore: vmost03_DS
       state: present
       wait_for_ip_address: no
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5d18c6ee2a656d5bdfbaa4a7d762c083e2da2fc4
