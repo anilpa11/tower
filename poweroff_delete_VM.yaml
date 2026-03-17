@@ -26,7 +26,7 @@
       when: vm_info.instance is not defined or vm_info.instance | length == 0
 
     - name: Power off the VM
-      community.vmware.vmware_guest_powerstate:
+      vmware.vmware.vm_powerstate:
         validate_certs: false
         name: "{{ vm_name }}"
         datacenter: "Arakis"
