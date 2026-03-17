@@ -1,0 +1,56 @@
+---
+- name: Power Off and Delete a VM
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  pre_tasks:
+    - name: Validate vm_name is provided
+      assert:
+        that:
+          - vm_name is defined and vm_name | length > 0
+        fail_msg: "You must provide a 'vm_name' to delete."
+
+  tasks:
+    - name: Check if VM exists
+      community.vmware.vmware_guest_info:
+        validate_certs: false
+        datacenter: "Arakis"
+        name: "{{ vm_name }}"
+      register: vm_info
+      failed_when: false
+
+    - name: Abort if VM not found
+      fail:
+        msg: "VM '{{ vm_name }}' was not found in vCenter. Aborting."
+      when: vm_info.instance is not defined or vm_info.instance | length == 0
+
+    - name: Power off the VM
+      community.vmware.vmware_guest_powerstate:
+        validate_certs: false
+        name: "{{ vm_name }}"
+        datacenter: "Arakis"
+        state: powered-off
+      register: poweroff_result
+
+    - name: Wait for VM to be fully powered off
+      community.vmware.vmware_guest_info:
+        validate_certs: false
+        datacenter: "Arakis"
+        name: "{{ vm_name }}"
+      register: vm_status
+      until: vm_status.instance.hw_power_status == "poweredOff"
+      retries: 10
+      delay: 10
+
+    - name: Delete the VM
+      community.vmware.vmware_guest:
+        validate_certs: false
+        name: "{{ vm_name }}"
+        datacenter: "Arakis"
+        state: absent
+      register: delete_result
+
+    - name: Confirm deletion
+      debug:
+        msg: "VM '{{ vm_name }}' has been successfully powered off and deleted."
