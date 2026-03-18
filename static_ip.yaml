@@ -1,6 +1,17 @@
 ---
+- name: Resolve target host from survey input
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Add target host to in-memory inventory
+      add_host:
+        name: "{{ target_host }}"
+        groups: target_vm
+        ansible_host: "{{ target_host }}"
+
 - name: Change Network from DHCP to Static IP (Netplan)
-  hosts: "{{ target_host }}"
+  hosts: target_vm
   gather_facts: yes
   become: yes
 
@@ -8,7 +19,6 @@
     - name: Validate all required variables are provided
       assert:
         that:
-          - target_host is defined and target_host | length > 0
           - static_ip is defined and static_ip | length > 0
           - subnet_prefix is defined
           - gateway is defined and gateway | length > 0
