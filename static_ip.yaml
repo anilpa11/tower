@@ -1,0 +1,102 @@
+---
+- name: Change Network from DHCP to Static IP (Netplan)
+  hosts: "{{ target_host }}"
+  gather_facts: yes
+  become: yes
+
+  pre_tasks:
+    - name: Validate all required variables are provided
+      assert:
+        that:
+          - target_host is defined and target_host | length > 0
+          - static_ip is defined and static_ip | length > 0
+          - subnet_prefix is defined
+          - gateway is defined and gateway | length > 0
+          - dns_servers is defined and dns_servers | length > 0
+        fail_msg: "All network variables must be provided."
+
+    - name: Detect active netplan config file
+      find:
+        paths: /etc/netplan/
+        patterns: "*.yaml"
+      register: netplan_files
+
+    - name: Abort if no netplan config found
+      fail:
+        msg: "No netplan configuration file found in /etc/netplan/"
+      when: netplan_files.files | length == 0
+
+    - name: Set netplan config file path
+      set_fact:
+        netplan_config: "{{ netplan_files.files | sort(attribute='path') | first | json_query('path') }}"
+
+    - name: Detect active network interface
+      set_fact:
+        active_interface: "{{ ansible_default_ipv4.interface }}"
+
+    - name: Show detected settings
+      debug:
+        msg:
+          - "Netplan file   : {{ netplan_config }}"
+          - "Interface      : {{ active_interface }}"
+          - "Current IP     : {{ ansible_default_ipv4.address }}"
+          - "New Static IP  : {{ static_ip }}/{{ subnet_prefix }}"
+          - "Gateway        : {{ gateway }}"
+          - "DNS Servers    : {{ dns_servers }}"
+
+  tasks:
+    - name: Backup existing netplan config
+      copy:
+        src: "{{ netplan_config }}"
+        dest: "{{ netplan_config }}.bak"
+        remote_src: yes
+
+    - name: Apply static IP netplan configuration
+      copy:
+        dest: "{{ netplan_config }}"
+        owner: root
+        group: root
+        mode: '0600'
+        content: |
+          network:
+            version: 2
+            renderer: networkd
+            ethernets:
+              {{ active_interface }}:
+                dhcp4: false
+                addresses:
+                  - {{ static_ip }}/{{ subnet_prefix }}
+                routes:
+                  - to: default
+                    via: {{ gateway }}
+                nameservers:
+                  addresses:
+                    {% for dns in dns_servers.split(',') %}
+                    - {{ dns | trim }}
+                    {% endfor %}
+
+    - name: Validate netplan config syntax
+      command: netplan generate
+      register: netplan_validate
+      failed_when: netplan_validate.rc != 0
+
+    - name: Apply netplan configuration
+      command: netplan apply
+      async: 10
+      poll: 0
+
+    - name: Wait for VM to come back on new static IP
+      wait_for_connection:
+        delay: 15
+        timeout: 120
+
+    - name: Confirm new IP address
+      setup:
+        filter: ansible_default_ipv4
+
+    - name: Display final network info
+      debug:
+        msg:
+          - "Interface : {{ ansible_default_ipv4.interface }}"
+          - "New IP    : {{ ansible_default_ipv4.address }}"
+          - "Gateway   : {{ ansible_default_ipv4.gateway }}"
