@@ -38,7 +38,7 @@
 
     - name: Set netplan config file path
       set_fact:
-        netplan_config: "{{ netplan_files.files | sort(attribute='path') | first | json_query('path') }}"
+        netplan_config: "{{ (netplan_files.files | sort(attribute='path') | first).path }}"
 
     - name: Detect active network interface
       set_fact:
