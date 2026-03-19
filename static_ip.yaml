@@ -97,7 +97,9 @@
       command: netplan apply
       async: 10
       poll: 0
-
+    - name: Switch connection to new static IP
+      set_fact:
+        ansible_host: "{{ static_ip }}"
     - name: Wait for VM to come back on new static IP
       wait_for_connection:
         delay: 15
