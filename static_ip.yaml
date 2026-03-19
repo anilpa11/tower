@@ -60,7 +60,10 @@
         src: "{{ netplan_config }}"
         dest: "{{ netplan_config }}.bak"
         remote_src: yes
-
+    - name: Remove VMware netplan file
+      file:
+        path: /etc/netplan/99-netcfg-vmware.yaml
+        state: absent
     - name: Apply static IP netplan configuration
       copy:
         dest: "{{ netplan_config }}"
